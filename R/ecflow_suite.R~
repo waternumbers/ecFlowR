@@ -1,0 +1,56 @@
+## prototype of making a suite definition
+rm(list=ls())
+
+join <- function(type,name,...){
+    c(paste(type,name),
+      unlist(sapply(list(...),function(x){paste("\t",x)}))
+      )
+}
+escapeStr <- function(x){
+    ifelse(is.character(x),paste0("'",x,"'"),x)
+}
+
+suite <- function(name,...){
+    join("suite",name,...)
+}
+family <- function(name,...){
+    join("family",name,...)
+}
+task <- function(name,...){
+    join("task",name,...)
+}
+edit <- function(par,val){
+    val <- escapeStr(val)
+    paste("edit",par,val)
+}
+cron <- function(start,end,step){
+    paste("cron",start,end,step)
+}
+label <- function(name,val="''"){
+    paste("label",name,val)
+}
+
+tmp <- suite("ecFlowR_test",
+             edit("ECF_MICRO","%"),
+             edit("ECF_JOB_CMD","Rscript %ECF_JOB% > %ECF_JOBOUT% 2>&1"),
+             edit("ECF_KILL_CMD","kill -15 %ECF_RID%"),
+             edit("ECF_CHECK_CMD","ps --pid %ECF_RID% -f"),
+             edit("ECF_NODE","%ECF_HOST%"),
+             edit("ECF_STATUS_CMD","ps --pid %ECF_RID% -f > %ECF_JOB%.stat 2>&1"),
+             edit("etste",2),
+             task("shouldRun",
+                  cron("00:00","23:59","00:01"),
+                  label("lastRun"),
+                  label("lastSucess")),
+             task("shouldFail",
+                  cron("00:00","23:59","00:01"),
+                  label("lastRun"),
+                  label("lastSucess")),
+             task("catchFail",
+                  cron("00:00","23:59","00:01"),
+                  label("lastRun"),
+                  label("lastSucess"))
+             )
+
+
+writeLines(tmp)
