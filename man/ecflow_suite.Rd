@@ -8,6 +8,7 @@
 \alias{edit}
 \alias{cron}
 \alias{label}
+\alias{trigger}
 \title{ecflow_suite definition}
 \usage{
 suite(name, ...)
@@ -21,6 +22,8 @@ edit(par, val)
 cron(start, end, step)
 
 label(name, val = "''")
+
+trigger(cond = "''")
 }
 \arguments{
 \item{name}{name of the suite, task, family or label}
@@ -36,6 +39,8 @@ label(name, val = "''")
 \item{end}{end of cron period}
 
 \item{step}{step of cron}
+
+\item{cond}{the condition for the trigger to occur}
 }
 \description{
 Functions for building ecFlow suites

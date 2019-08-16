@@ -8,6 +8,7 @@
 #' @param start start of cron period
 #' @param end end of cron period
 #' @param step step of cron
+#' @param cond the condition for the trigger to occur
 #' @param ... nested suite objects
 #'
 #' @details cron times should be provided as strings. Parameter values are escaped if they are character strings.
@@ -85,3 +86,10 @@ cron <- function(start,end,step){
 label <- function(name,val="''"){
     paste("label",name,val)
 }
+
+#' @name ecflow_suite
+#' @export
+trigger <- function(cond="''"){
+    paste("trigger",cond)
+}
+
