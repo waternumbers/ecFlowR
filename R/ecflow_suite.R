@@ -52,13 +52,13 @@ escapeStr <- function(x){
 #' @name ecflow_suite
 #' @export
 suite <- function(name,...){
-    join("suite",name,...)
+    c(join("suite",name,...),"endsuite")
 }
 
 #' @name ecflow_suite
 #' @export
 family <- function(name,...){
-    join("family",name,...)
+    c(join("family",name,...),"endfamily")
 }
 
 #' @name ecflow_suite

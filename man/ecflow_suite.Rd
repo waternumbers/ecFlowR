@@ -29,15 +29,13 @@ label(name, val = "''")
 
 \item{par}{parameter to set}
 
-\item{val}{value to take}
+\item{val}{desired value for \code{name} to take}
+
+\item{start}{start of cron period}
 
 \item{end}{end of cron period}
 
 \item{step}{step of cron}
-
-\item{value}{desired value for \code{name} to take}
-
-\item{strt}{start of cron period}
 }
 \description{
 Functions for building ecFlow suites

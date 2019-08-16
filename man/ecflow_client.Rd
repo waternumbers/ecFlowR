@@ -31,6 +31,8 @@ ecflow_change(name, value)
 \item{name}{name of the item to manipulate}
 
 \item{value}{desired value for \code{name} to take}
+
+\item{n}{event number}
 }
 \description{
 Wrapper functions makeing system calls to the ecflow_client to interact with the ecflow_server

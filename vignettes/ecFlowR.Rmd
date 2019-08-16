@@ -1,0 +1,125 @@
+---
+title: "Using ecFlowR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using ecFlowR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+The purpose of this vignette is to demonstrate the construction of a simple
+ecflow suite from within R which makes us of some template job scripts which
+are kept within the packages ```extdata``` directory.
+
+```{r, setup}
+library(ecFlowR)
+```
+# Creating the suite directories
+Start by specifying the name of the suite:
+```{r suite_name}
+suite_name <- "ecFlowR_test"
+```
+In this example the suite definition will be stored in the ```suite_path```,
+the scripts for the task in ```script_path``` and the generated job files in ```job_path```. These paths should be either the full path name or relative to
+the home path of an already running server. In this case they are defined as:
+```{r suite_paths}
+suite_path <- tempdir()
+script_path <- file.path(suite_path,'scripts')
+job_path <- file.path(suite_path,'jobs')
+```
+which can be created using the following commands:
+```{r suite_paths_create}
+unlink(file.path(suite_path,'*'),recursive=TRUE)
+dir.create(script_path,recursive=TRUE)
+dir.create(job_path,recursive=TRUE)
+```
+
+# Creating the suite definition
+The test suite consists to jobs designed to highlight different ways of
+handling failures, either by returning a failure to the ecflow server or by
+catching it and returning a success.
+
+The suite is generated using functions which return vectors of text strings
+which define the elements of the suite definition file which is written into
+```suite_path```.
+
+```{r suite_create}
+## create the suite
+tmp <- suite("ecFlowR_test",
+             edit("ECF_MICRO","%"),
+             edit("ECF_JOB_CMD","Rscript %ECF_JOB% > %ECF_JOBOUT% 2>&1"),
+             edit("ECF_KILL_CMD","kill -15 %ECF_RID%"),
+             edit("ECF_CHECK_CMD","ps --pid %ECF_RID% -f"),
+             edit("ECF_NODE","%ECF_HOST%"),
+             edit("ECF_STATUS_CMD","ps --pid %ECF_RID% -f > %ECF_JOB%.stat 2>&1"),
+             edit("ECF_URL_CMD","${BROWSER:=firefox} -remote 'openURL(%ECF_URL_BASE%/%ECF_URL%)'"),
+             edit("ECF_HOME",job_path),
+             edit("ECF_FILES",script_path),
+             edit("ECF_EXTN",".R"),
+             task("shouldRun",
+                  cron("00:00","23:59","00:01"),
+                  label("lastRun"),
+                  label("lastSucess")),
+             task("shouldFail",
+                  cron("00:00","23:59","00:01"),
+                  label("lastRun"),
+                  label("lastSucess")),
+             task("catchFail",
+                  cron("00:00","23:59","00:01"),
+                  label("lastRun"),
+                  label("lastSucess"))
+             )
+			 
+## write out the suite
+suite_def <- file.path(suite_path,paste0(suite_name,".def"))
+writeLines(tmp,suite_def)	 
+```
+Some important aspects of the definition are:
+- The setting of ECF\_EXTN to the standard extension of R files
+- The setting of ECF\_JOB\_CMD to interpret the ecf scripts using the
+  ```Rscript``` engine.
+
+The three tasks are set to execute every minute and update the labels lastRun
+and lastSuccess with the last time the script was run and the last time it
+completed sucessfully respectively.
+
+# Example job scripts
+A set of example job scripts can be found in
+```{r script_location}
+script_file <- system.file("extdata", "test_scripts.tar.gz", package = "ecFlowR", mustWork = TRUE)
+```
+For use in the suite they can be extracted to the ```script_path```
+```{r extract_scripts}
+untar(script_file,exdir=script_path)
+```
+
+Looking at the scripts we see that they contain standard R code.
+```{r job_script}
+writeLines(readLines(file.path(script_path,"catchFail.R")))
+```
+The key aspects that make this suitable for an ecflow task script are:
+- the setting of the environment variables for communication with the
+  ecflow_server (Note the use of the ECF\_MACRO character to identify
+  variables subsituted by the ecflow_server during job generation)
+- calls to ```ecflow_init``` and ```ecflow_complete``` for telling the server
+  when jobs have started and completed
+- The catching of the error (```stop```) in R so that the lastSuccess label is
+  never updated the but the code returns a completed message to the server.
+  
+# Running and loading the suite
+This can be acheived using:
+```{r load_run,eval=FALSE}
+## make sure the server is started
+system("ecflow_server &")
+
+## load and start the suite
+system(paste0("ecflow_client --load=",suite_def," force"))
+system(paste0("ecflow_client --begin=",suite_name))
+## 
+```
